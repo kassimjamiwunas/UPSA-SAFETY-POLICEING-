@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>UPSA Safety (Policing)-Admin Dashboard</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:linear-gradient(to bottom right,#002147,#004aad);
+color:white;
+margin:0;
+padding:20px;
+}
+
+/* HEADER */
+
+.header-container{
+text-align:center;
+margin-bottom:20px;
+}
+
+.header-container img{
+height:80px;
+display:block;
+margin:auto;
+}
+
+h2{
+color:#ffd700;
+}
+
+#logoutBtn{
+display:block;
+margin:10px auto;
+background:#ffd700;
+border:none;
+padding:8px 15px;
+font-weight:bold;
+border-radius:5px;
+cursor:pointer;
+}
+
+#logoutBtn:hover{
+background:#ffb800;
+}
+
+/* STATS */
+
+#stats{
+text-align:center;
+font-size:18px;
+margin:15px;
+}
+
+#alerts{
+text-align:center;
+color:#ff4d4d;
+font-weight:bold;
+}
+
+/* FILTER */
+
+label{
+font-weight:bold;
+}
+
+select{
+padding:6px;
+border-radius:5px;
+margin-bottom:15px;
+}
+
+/* TABLE */
+
+table{
+width:100%;
+border-collapse:collapse;
+background:rgba(0,0,50,0.8);
+}
+
+th,td{
+border:1px solid white;
+padding:8px;
+}
+
+th{
+background:#001f4d;
+color:#ffd700;
+}
+
+.pending{
+color:#ff4d4d;
+font-weight:bold;
+}
+
+.resolved{
+color:#00ff99;
+font-weight:bold;
+}
+
+/* BUTTONS */
+
+button{
+background:#ffd700;
+border:none;
+padding:6px 10px;
+font-weight:bold;
+border-radius:4px;
+cursor:pointer;
+margin-right:5px;
+}
+
+button:hover{
+background:#ffb800;
+}
+
+/* CHART */
+
+#chartContainer{
+width:90%;
+margin:auto;
+margin-top:30px;
+background:rgba(0,0,50,0.8);
+padding:15px;
+border-radius:10px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="header-container">
+<img src="KRAAA.webp"alt="KRAA.webp">
+<h2>Admin Dashboard - UPSA Safety (Policing)</h2>
+</div>
+
+<button id="logoutBtn">Logout</button>
+
+<div id="stats">Loading stats...</div>
+<div id="alerts">Loading alerts...</div>
+
+<label>Filter by Report Type:</label>
+
+<select id="filterType">
+<option value="">All</option>
+<option value="Harassment">Harassment</option>
+<option value="Theft">Theft</option>
+<option value="Assault">Assault</option>
+<option value="Normal">Normal</option>
+</select>
+
+<table>
+
+<thead>
+
+<tr>
+<th>ID</th>
+<th>Type</th>
+<th>Description</th>
+<th>Location</th>
+<th>Date</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+
+</thead>
+
+<tbody id="table"></tbody>
+
+</table>
+
+<div id="chartContainer">
+<canvas id="crimeChart"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+const table=document.getElementById("table");
+const statsDiv=document.getElementById("stats");
+const alertsDiv=document.getElementById("alerts");
+const filterType=document.getElementById("filterType");
+const logoutBtn=document.getElementById("logoutBtn");
+
+let reportsData=[];
+
+/* LOGOUT */
+
+logoutBtn.addEventListener("click",()=>{
+localStorage.removeItem("token");
+window.location.href="index.html";
+});
+
+/* LOAD REPORTS */
+
+function loadReports(){
+
+const token=localStorage.getItem("token");
+
+fetch("http://localhost:5000/reports",{
+headers:{Authorization:token}
+})
+
+.then(res=>res.json())
+
+.then(data=>{
+
+reportsData=data;
+
+displayReports();
+loadStats();
+updateAlerts();
+renderChart();
+
+})
+
+.catch(err=>console.log(err));
+
+}
+
+/* DISPLAY REPORTS */
+
+function displayReports(){
+
+const filter=filterType.value;
+
+table.innerHTML="";
+
+reportsData
+
+.filter(r=>!filter || r.report_type===filter)
+
+.forEach(r=>{
+
+const tr=document.createElement("tr");
+
+tr.innerHTML=`
+
+<td>${r.id}</td>
+
+<td>${r.report_type}</td>
+
+<td>${r.description}</td>
+
+<td>${r.location}</td>
+
+<td>${new Date(r.created_at).toLocaleString()}</td>
+
+<td class="${r.status.toLowerCase()}">${r.status}</td>
+
+<td>
+
+<button onclick="downloadReport(${r.id})">Download</button>
+
+${r.status==="Pending"
+
+? `<button onclick="updateStatus(${r.id},'Resolved')">Resolve</button>`
+
+: ""}
+
+</td>
+
+`;
+
+table.appendChild(tr);
+
+});
+
+}
+
+filterType.addEventListener("change",displayReports);
+
+/* UPDATE STATUS */
+
+function updateStatus(id,status){
+
+const token=localStorage.getItem("token");
+
+fetch(`http://localhost:5000/report/${id}`,{
+
+method:"PUT",
+
+headers:{
+"Content-Type":"application/json",
+Authorization:token
+},
+
+body:JSON.stringify({status})
+
+})
+
+.then(r=>r.json())
+
+.then(()=>loadReports());
+
+}
+
+/* DOWNLOAD REPORT */
+
+function downloadReport(id){
+
+const report=reportsData.find(r=>r.id===id);
+
+const content=`
+
+UPSA SAFETY POLICING REPORT
+-----------------------------
+
+Report ID: ${report.id}
+Type: ${report.report_type}
+Description: ${report.description}
+Location: ${report.location}
+Date: ${new Date(report.created_at).toLocaleString()}
+Status: ${report.status}
+
+Generated from UPSA Safety Portal
+
+`;
+
+const blob=new Blob([content],{type:"text/plain"});
+
+const link=document.createElement("a");
+
+link.href=URL.createObjectURL(blob);
+
+link.download="UPSA_Report_"+report.id+".txt";
+
+link.click();
+
+}
+
+/* STATS */
+
+function loadStats(){
+
+const token=localStorage.getItem("token");
+
+fetch("http://localhost:5000/stats",{
+headers:{Authorization:token}
+})
+
+.then(res=>res.json())
+
+.then(data=>{
+
+statsDiv.innerHTML=`
+Total Reports: ${data.total} |
+Pending: ${data.pending} |
+Resolved: ${data.resolved}
+`;
+
+});
+
+}
+
+/* ALERTS */
+
+function updateAlerts(){
+
+const pending=reportsData.filter(r=>r.status==="Pending");
+
+alertsDiv.innerHTML=
+
+pending.length>0
+
+? `⚠️ ${pending.length} Pending Reports`
+
+: "✅ No pending reports";
+
+}
+
+/* CHART */
+
+function renderChart(){
+
+const ctx=document.getElementById("crimeChart");
+
+const counts={Harassment:0,Theft:0,Assault:0,Normal:0};
+
+reportsData.forEach(r=>{
+
+counts[r.report_type]=(counts[r.report_type]||0)+1;
+
+});
+
+new Chart(ctx,{
+
+type:"bar",
+
+data:{
+labels:Object.keys(counts),
+
+datasets:[{
+
+label:"Reports",
+
+data:Object.values(counts),
+
+backgroundColor:"#ffd700"
+
+}]
+
+},
+
+options:{
+plugins:{legend:{display:false}},
+scales:{y:{beginAtZero:true}}
+}
+
+});
+
+}
+
+loadReports();
+
+</script>
+
+</body>
+</html>

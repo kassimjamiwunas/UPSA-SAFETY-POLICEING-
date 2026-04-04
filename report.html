@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Submit Incident Report - UPSA Safety</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom right, #002147, #004aad); /* UPSA colors */
+      color: #fff;
+      padding: 20px;
+    }
+    .header-container {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .header-container img {
+      height: 80px;
+      display: block;
+      margin: 0 auto 10px auto;
+    }
+    h2 {
+      text-align:center;
+      color:#ffd700;
+      margin-bottom: 30px;
+    }
+    .container { display:flex; flex-wrap:wrap; justify-content:space-around; }
+    .report-form, .safety-tips {
+      background-color: rgba(0,0,50,0.85);
+      padding:20px;
+      border-radius:10px;
+      width:350px;
+      margin:10px;
+      box-shadow:0 0 15px rgba(0,0,0,0.5);
+    }
+    input, textarea, select, button {
+      width:100%;
+      padding:8px;
+      margin:10px 0;
+      border-radius:5px;
+      border:none;
+      font-size:14px;
+    }
+    button {
+      background-color:#ffd700;
+      color:#000;
+      font-weight:bold;
+      cursor:pointer;
+      transition:0.3s;
+    }
+    button:hover { background-color:#ffb800; }
+    label { font-weight:bold; }
+    .message { text-align:center; margin-top:10px; font-weight:bold; color:#e7fcf8; }
+    .safety-tips h3 { text-align:center; color:#ffd700; }
+    .safety-tips ul { list-style-type: disc; padding-left:20px;}
+
+    .emergency-box {
+  background-color: rgba(0,0,0,0.7);
+  padding: 15px;
+  border-radius: 10px;
+  margin: 20px auto;
+  width: 300px;
+  text-align: center;
+}
+
+.red { color: #ff4d4d; }
+.green { color: #00ff99; }
+.grey { color: #ccc; }
+
+a {
+  text-decoration: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+a[href^="tel"] {
+  background-color: red;
+  color: white;
+}
+
+a[href^="https://wa.me"] {
+  background-color: green;
+  color: white;
+}
+
+  </style>
+</head>
+<body>
+ <div style="color: #e7fcf8;">
+  <p>Welcome to Upsa Report</p>
+ </div>
+<div class="header-container">
+  <img src="UPSA.webp" alt="UPSA.webp">
+  <h2>Upsa Safety System - Incident Report</h2>
+</div>
+
+<div class="container">
+
+  <!-- Normal Report Form -->
+  <div class="report-form">
+    <h3>Normal Report</h3>
+    <form id="normalForm">
+      <label>Report Type</label>
+      <select id="typeNormal" required>
+        <option value="">-- Select Type --</option>
+        <option value="Harassment">Harassment</option>
+        <option value="Theft">Theft</option>
+        <option value="Assault">Assault</option>
+        <option value="Normal">Normal</option>
+      </select>
+      <label>Description</label>
+      <textarea id="descriptionNormal" rows="4" placeholder="Describe the incident" required></textarea>
+      <label>Location</label>
+      <input id="locationNormal" type="text" placeholder="Enter location" required>
+      <button type="submit">Submit Normal Report</button>
+      <p><span style="color: red;font-weight: bold;">(Warning)</span>False reports are serious offense; ensure all information is accurate.</p>
+    </form>
+    <div class="message" id="messageNormal"></div>
+  </div>
+
+  <!-- Anonymous Report Form -->
+  <div class="report-form">
+    <h3>Anonymous Report</h3>
+    <form id="anonymousForm">
+      <label>Report Type</label>
+      <select id="typeAnon" required>
+        <option value="">-- Select Type --</option>
+        <option value="Harassment">Harassment</option>
+        <option value="Theft">Theft</option>
+        <option value="Assault">Assault</option>
+        <option value="Normal">Normal</option>
+      </select>
+      <label>Description</label>
+      <textarea id="descriptionAnon" rows="4" placeholder="Describe the incident" required></textarea>
+      <label>Location</label>
+      <input id="locationAnon" type="text" placeholder="Enter location" required>
+      <button type="submit">Submit Anonymous Report</button>
+      <p><span style="color: red;font-weight: bold;">(Warning)</span>False reports are serious offense; ensure all information is accurate.</p>
+    </form>
+    <div class="message" id="messageAnon"></div>
+  </div>
+
+  <!-- Safety Tips Section -->
+  <div class="safety-tips">
+    <h3>Safety Tips</h3>
+    <ul>
+      <li>Always walk with friends at night.</li>
+      <li>Report suspicious activities immediately.</li>
+      <li>Keep your belongings secure at all times.</li>
+      <li>Do not share personal information with strangers.</li>
+      <li>Follow campus security alerts.</li>
+    </ul>
+  </div>
+
+</div>
+
+
+<!-- ✅ Emergency Contacts -->
+<div class="emergency-box">
+  <h3>EMERGENCY CONTACTS</h3>
+
+  <p class="red">
+    Campus Security: 
+    <a href="tel:0541727168">📞 Call Now</a>
+  </p>
+
+  <p class="green">
+    WhatsApp: 
+    <a href="https://wa.me/233541727168" target="_blank">💬 Chat Now</a>
+  </p>
+
+  <p class="grey">Local Police: 191 / 999</p>
+</div>
+
+<script>
+  // Normal Report
+  const normalForm = document.getElementById("normalForm");
+  const messageNormal = document.getElementById("messageNormal");
+  normalForm.addEventListener("submit", e => {
+    e.preventDefault();
+    const type = document.getElementById("typeNormal").value;
+    const description = document.getElementById("descriptionNormal").value;
+    const location = document.getElementById("locationNormal").value;
+    const token = localStorage.getItem("token");
+    fetch("http://localhost:5000/report", {
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "Authorization": token
+      },
+      body:JSON.stringify({type, description, location, anonymous:false})
+    }).then(r=>r.json()).then(data=>{
+      messageNormal.textContent=data.message;
+      normalForm.reset();
+    }).catch(err=>messageNormal.textContent="Error submitting report");
+  });
+
+  // Anonymous Report
+  const anonymousForm = document.getElementById("anonymousForm");
+  const messageAnon = document.getElementById("messageAnon");
+  anonymousForm.addEventListener("submit", e => {
+    e.preventDefault();
+    const type = document.getElementById("typeAnon").value;
+    const description = document.getElementById("descriptionAnon").value;
+    const location = document.getElementById("locationAnon").value;
+    const token = localStorage.getItem("token");
+    fetch("http://localhost:5000/report", {
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "Authorization": token
+      },
+      body:JSON.stringify({type, description, location, anonymous:true})
+    }).then(r=>r.json()).then(data=>{
+      messageAnon.textContent=data.message;
+      anonymousForm.reset();
+    }).catch(err=>messageAnon.textContent="Error submitting report");
+  });
+</script>
+
+</body>
+</html>
